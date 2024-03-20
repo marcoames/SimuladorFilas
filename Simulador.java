@@ -5,6 +5,8 @@ public class Simulador {
 
     private static double previous = 0.5;
 
+    private static double[] nums = {0.8, 0.2, 0.1, 0.9, 0.3, 0.4, 0.7};
+
     private static class Escalonador {
         private PriorityQueue<Evento> filaEventos;
 
@@ -108,16 +110,18 @@ public class Simulador {
         if (fila.status < fila.capacity) {
             fila.status++;
             if (fila.status <= fila.server) {
-                escalonador.alocaEvento(new Evento(1,
-                        TG + (fila.minService + (fila.maxService - fila.minService) * Next_random())));
+                escalonador.alocaEvento(new Evento(1, TG + (fila.minService + (fila.maxService - fila.minService) * Next_random())));
+                // escalonador.alocaEvento(new Evento(1, TG + (fila.minService + (fila.maxService - fila.minService) * nums[count])));
                 count++;
             }
         } else {
             fila.perda++;
         }
-        escalonador.alocaEvento(
-                new Evento(0, TG + (fila.minArrival + (fila.maxArrival - fila.minArrival) * Next_random())));
+            
+        escalonador.alocaEvento(new Evento(0, TG + (fila.minArrival + (fila.maxArrival - fila.minArrival) * Next_random())));
+        // escalonador.alocaEvento(new Evento(0, TG + (fila.minArrival + (fila.maxArrival - fila.minArrival) * nums[count])));
         count++;
+        
         double[] resultado = {count,TG};
         return resultado;
     }
@@ -130,8 +134,8 @@ public class Simulador {
 
         fila.status--;
         if (fila.status >= fila.server) {
-            escalonador.alocaEvento(new Evento(1,
-                    TG + (fila.minService + (fila.maxService - fila.minService) * Next_random())));
+            escalonador.alocaEvento(new Evento(1, TG + (fila.minService + (fila.maxService - fila.minService) * Next_random())));
+            // escalonador.alocaEvento(new Evento(1, TG + (fila.minService + (fila.maxService - fila.minService) * nums[count])));
             count++;
         }
         double[] resultado = {count,TG};
@@ -145,15 +149,16 @@ public class Simulador {
         // Tempo Global
         double TG = 0;
 
-        Evento evento1 = new Evento(0, 2);
+        Evento evento1 = new Evento(0, 1);
         escalonador.alocaEvento(evento1);
 
         // Loop Simulacao
         int count = 0;
         while (count < 100000) {
+        // while (count < 7) {
 
             Evento nextEvent = escalonador.proxEvento();
-            // System.out.println("Novo Evento: " + nextEvent.toString());
+            //System.out.println("Novo Evento: " + nextEvent.toString());
 
             if (nextEvent.getType() == Evento.CHEGADA) {
                 double[] result = Chegada(nextEvent, fila, escalonador, TG, count);    
@@ -167,7 +172,9 @@ public class Simulador {
             }
         }
 
-        System.out.println("Estado\t\tTempo\t\tProbabilidade");
+        System.out.printf("\nFila G/G/%d/%d", fila.server, fila.capacity);
+
+        System.out.println("\nEstado\t\tTempo\t\tProbabilidade");
 
         for (int i = 0; i < fila.tempos.length; i++) {
             double time = fila.tempos[i];
@@ -181,7 +188,7 @@ public class Simulador {
 
         System.out.println("\nPerdas: " + fila.perda);
         System.out.println("Tempo Global: " + TG);
-
+        System.out.println("\n");
 
     }
 
@@ -193,9 +200,13 @@ public class Simulador {
         // FILA G/G/2/5
         Fila fila2 = new Fila(5,2,2,5,3,5);
 
-        // Faz a Simulacao passando a fila
-        Simulacao(fila2);
+        // FILA G/G/1/2
+        Fila fila3 = new Fila(2,1,1,4,1,3);
 
+        // Faz a Simulacao passando a fila
+        Simulacao(fila1);
+        Simulacao(fila2);
+        //Simulacao(fila3);
         
     }
 
