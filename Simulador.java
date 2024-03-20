@@ -5,7 +5,7 @@ public class Simulador {
 
     private static double previous = 0.5;
 
-    private static double[] nums = {0.8, 0.2, 0.1, 0.9, 0.3, 0.4, 0.7};
+    //private static double[] nums = {0.8, 0.2, 0.1, 0.9, 0.3, 0.4, 0.7};
 
     private static class Escalonador {
         private PriorityQueue<Evento> filaEventos;
@@ -66,7 +66,7 @@ public class Simulador {
     }
 
     private static class Evento {
-        // Define Event class to represent different types of events
+        // Tipos de Evento
         public static final int CHEGADA = 0;
         public static final int SAIDA = 1;
 
