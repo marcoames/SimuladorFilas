@@ -138,7 +138,12 @@ public class Simulador {
         return resultado;
     }
 
-    public static void Simulacao(Fila fila, Escalonador escalonador, double TG){
+    public static void Simulacao(Fila fila){
+
+        Escalonador escalonador = new Escalonador();
+
+        // Tempo Global
+        double TG = 0;
 
         Evento evento1 = new Evento(0, 2);
         escalonador.alocaEvento(evento1);
@@ -162,6 +167,8 @@ public class Simulador {
             }
         }
 
+        System.out.println("Estado\t\tTempo\t\tProbabilidade");
+
         for (int i = 0; i < fila.tempos.length; i++) {
             double time = fila.tempos[i];
             double probability = (time / TG) * 100;
@@ -172,27 +179,22 @@ public class Simulador {
 
         }
 
-        System.out.println("\nTempo Global\t" + TG);
-        System.out.println("Perdas: " + fila.perda);
+        System.out.println("\nPerdas: " + fila.perda);
+        System.out.println("Tempo Global: " + TG);
+
 
     }
 
     public static void main(String[] args) {
 
-        // FILA G/G/5/1
+        // FILA G/G/1/5
         Fila fila1 = new Fila(5, 1, 2, 5, 3, 5);
 
-        // FILA G/G/5/2
-        //Fila fila2 = new Fila(5,2,2,5,3,5);
+        // FILA G/G/2/5
+        Fila fila2 = new Fila(5,2,2,5,3,5);
 
-        Escalonador escalonador = new Escalonador();
-
-        // Tempo Global
-        double TG = 0;
-
-        Simulacao(fila1, escalonador, TG);
-
-        System.out.println("Estado\t\tTempo\t\tProbabilidade");
+        // Faz a Simulacao passando a fila
+        Simulacao(fila2);
 
         
     }
