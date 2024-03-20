@@ -149,7 +149,7 @@ public class Simulador {
         // Tempo Global
         double TG = 0;
 
-        Evento evento1 = new Evento(0, 1);
+        Evento evento1 = new Evento(0, 2);
         escalonador.alocaEvento(evento1);
 
         // Loop Simulacao
