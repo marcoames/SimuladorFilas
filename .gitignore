@@ -1,0 +1,25 @@
+# Compiled bytecode
+*.class
+
+# Compiled bytecode directory (if using Maven or Gradle)
+target/
+bin/
+out/
+
+# IDE-specific files (Eclipse, IntelliJ IDEA, NetBeans)
+.settings/
+.idea/
+*.iml
+
+# Build-related directories (Maven, Gradle)
+target/
+build/
+.gradle/
+.m2/
+
+# Dependency lock files
+*.lock
+
+# OS-specific files
+.DS_Store
+Thumbs.db
