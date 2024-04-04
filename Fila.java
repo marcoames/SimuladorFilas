@@ -81,15 +81,15 @@ public class Fila {
     @Override
     public String toString() {
         return "fila: {" +
-                "status=" + customers +
-                ", perda=" + loss +
-                ", capacity=" + capacity +
-                ", servers=" + servers +
-                ", minArrival=" + minArrival +
-                ", maxArrival=" + maxArrival +
-                ", minService=" + minService +
-                ", maxService=" + maxService +
-                ", tempos=" + Arrays.toString(times) +
+                "servers: " + servers +
+                ", capacity: " + capacity +
+                ", minArrival: " + minArrival +
+                ", maxArrival: " + maxArrival +
+                ", minService: " + minService +
+                ", maxService: " + maxService +
+                ", status: " + customers +
+                ", perda: " + loss +
+                ", times: " + Arrays.toString(times) +
                 '}';
     }
 
