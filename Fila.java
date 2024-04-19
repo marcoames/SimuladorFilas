@@ -1,6 +1,8 @@
 import java.util.Arrays;
 
 public class Fila {
+    private String name;
+
     private int servers;
     private int capacity;
 
@@ -14,7 +16,9 @@ public class Fila {
 
     private double[] times;
 
-    public Fila(int servers, int capacity, int minArrival, int maxArrival, int minService, int maxService) {
+    public Fila(String name, int servers, int capacity, double minArrival, double maxArrival, double minService,
+            double maxService) {
+        this.name = name;
         this.servers = servers;
         this.capacity = capacity;
 
@@ -28,6 +32,10 @@ public class Fila {
 
         this.times = new double[capacity + 1];
 
+    }
+
+    public String getName() {
+        return this.name;
     }
 
     public int getServers() {
@@ -81,7 +89,8 @@ public class Fila {
     @Override
     public String toString() {
         return "fila: {" +
-                "servers: " + servers +
+                "name: " + name +
+                ", servers: " + servers +
                 ", capacity: " + capacity +
                 ", minArrival: " + minArrival +
                 ", maxArrival: " + maxArrival +

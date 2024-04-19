@@ -6,10 +6,12 @@ public class Evento {
 
     private int type;
     private double time;
+    private Fila fila;
 
-    public Evento(int type, double time) {
+    public Evento(int type, double time, Fila fila) {
         this.type = type;
         this.time = time;
+        this.fila = fila;
     }
 
     public int getType() {
@@ -20,11 +22,16 @@ public class Evento {
         return time;
     }
 
+    public Fila getFila(){
+        return fila;
+    }
+
     @Override
     public String toString() {
         return "{" +
                 "type=" + type +
                 ", time=" + time +
+                ", fila=" + fila.getName() +
                 '}';
     }
 }
