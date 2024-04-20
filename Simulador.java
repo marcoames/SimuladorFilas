@@ -1,8 +1,17 @@
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.security.auth.login.Configuration.Parameters;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import org.yaml.snakeyaml.Yaml;
 
 public class Simulador {
 
@@ -16,15 +25,16 @@ public class Simulador {
     // Para usar numeros pseudoaleatorios predefinidos
     // private static double[] nums = {0.8, 0.2, 0.1, 0.9, 0.3, 0.4, 0.7};
 
-    public static void main(String[] args) {
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 
         //////// UNICA FILA ////////
 
         // FILA G/G/1/5
-        // Fila fila = new Fila(1, 5, 2.0, 5.0, 3.0, 5.0);
+        // Fila fila = new Fila("F", 1, 5, 2.0, 5.0, 3.0, 5.0);
 
         // FILA G/G/2/5
-        // Fila fila = new Fila(2, 5, 2, 5, 3, 5);
+        // Fila fila = new Fila("F", 2, 5, 2, 5, 3, 5);
 
         //////// FILAS EM TANDEM ////////
 
@@ -35,27 +45,81 @@ public class Simulador {
         // Fila fila2 = new Fila("F2",1, 5, 0.0, 0.0, 2.0, 3.0);
 
         //////// LISTA DE FILAS ////////
+        //// YML ////
 
+        Map<String, Double> arrivals = new HashMap<>();
         ArrayList<Fila> filas = new ArrayList<>();
-        // G/G/1/10
-        filas.add(new Fila("Q1", 1, 10, 2.0, 4.0, 1.0, 2.0));
-        // G/G/2/5
-        filas.add(new Fila("Q2", 2, 5, 0, 0, 4.0, 8.0));
-        // G/G/2/10
-        filas.add(new Fila("Q3", 2, 10, 0, 0, 5.0, 15.0));
-
         ArrayList<Connection> network = new ArrayList<>();
-        network.add(new Connection("Q1", "Q2", 0.8));
-        network.add(new Connection("Q1", "Q3", 0.2));
-        network.add(new Connection("Q2", "Q1", 0.3));
-        network.add(new Connection("Q2", "Q2", 0.5));
-        network.add(new Connection("Q3", "Q3", 0.7));
+
+        Map<String, Map<String, Object>> queuesMap = new HashMap<>();
+        List<Map<String, Object>> networkList = new ArrayList<>();
+
+        Yaml yaml = new Yaml();
+        try (InputStream inputStream = new FileInputStream("modelo.yml")) {
+            Map<String, Object> yamlData = yaml.load(inputStream);
+
+            // Access data from YAML
+            Map<String, Double> arrivalsData = (Map<String, Double>) yamlData.get("arrivals");
+            queuesMap = (Map<String, Map<String, Object>>) yamlData.get("queues");
+            networkList = (List<Map<String, Object>>) yamlData.get("network");
+
+            // Populate arrivals map directly from arrivalsData
+            arrivals.putAll(arrivalsData);
+
+            // Convert queuesMap and networkList into Fila and Connection objects
+            // respectively
+            for (Map.Entry<String, Map<String, Object>> entry : queuesMap.entrySet()) {
+                String queueName = entry.getKey();
+                Map<String, Object> queueData = entry.getValue();
+
+                // Add null checks before converting the values to their respective types
+                Double minArrival = queueData.get("minArrival") != null ? (Double) queueData.get("minArrival") : 0.0;
+                Double maxArrival = queueData.get("maxArrival") != null ? (Double) queueData.get("maxArrival") : 0.0;
+                Double minService = queueData.get("minService") != null ? (Double) queueData.get("minService") : 0.0;
+                Double maxService = queueData.get("maxService") != null ? (Double) queueData.get("maxService") : 0.0;
+
+                Fila fila = new Fila(
+                        queueName,
+                        (int) queueData.get("servers"),
+                        (int) queueData.get("capacity"),
+                        minArrival,
+                        maxArrival,
+                        minService,
+                        maxService);
+                filas.add(fila);
+            }
+
+            for (Map<String, Object> connectionData : networkList) {
+                Connection connection = new Connection(
+                        (String) connectionData.get("source"),
+                        (String) connectionData.get("target"),
+                        (double) connectionData.get("probability"));
+                network.add(connection);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Chegadas:");
+        for (Map.Entry<String, Double> entry : arrivals.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
+
+        System.out.println("\nFilas:");
+        for (Fila f : filas) {
+            System.out.println(f.toString());
+        }
+        System.out.println("\nConexoes:");
+        for (Connection c : network) {
+            System.out.println(c.toString());
+        }
 
         //////// SIMULACOES ////////
 
         // SimulacaoUnicaFila(fila);
         // SimulacaoFilasEmTandem(fila1, fila2);
-        SimulacaoListaFilas(filas, network);
+        SimulacaoListaFilas(filas, network, arrivals);
 
     }
 
@@ -321,11 +385,16 @@ public class Simulador {
         if (filaSource.status() < filaSource.getCapacity()) {
             filaSource.in();
             if (filaSource.status() <= filaSource.getServers()) {
+                // if rnd PASSAGEM
+
                 escalonador.alocaEvento(new Evento(2, TG
                         + (filaSource.getMinService()
                                 + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
                         filaSource));
                 count++;
+
+                // else SAIDA
+
             }
         } else {
             filaSource.loss();
@@ -376,10 +445,12 @@ public class Simulador {
 
         filaSource.out();
         if (filaSource.status() >= filaSource.getServers()) {
+
             escalonador.alocaEvento(new Evento(2,
                     TG + (filaSource.getMinService()
                             + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
-                    filaTarget));
+                    filaSource));
+
         }
 
         if (filaTarget.status() < filaTarget.getCapacity()) {
@@ -397,13 +468,24 @@ public class Simulador {
         }
     }
 
-    public static void SimulacaoListaFilas(ArrayList<Fila> filas, ArrayList<Connection> network) {
+    public static void SimulacaoListaFilas(ArrayList<Fila> filas, ArrayList<Connection> network,
+            Map<String, Double> arrivals) {
         Escalonador escalonador = new Escalonador();
 
         // Primeiro evento de chegada
-        Evento evento1 = new Evento(0, 2.0, filas.get(0));
-        escalonador.alocaEvento(evento1);
-        // System.out.println("CHEGADA");
+        for (Map.Entry<String, Double> entry : arrivals.entrySet()) {
+            String queueName = entry.getKey();
+            Double arrivalRate = entry.getValue();
+
+            Fila filaEvento = getFilaByName(queueName, filas);
+
+            Evento evento1 = new Evento(0, arrivalRate, filaEvento);
+            // System.out.println(evento1.toString());
+            escalonador.alocaEvento(evento1);
+            // Break the loop after creating the first Evento object
+            // break;
+
+        }
 
         // Loop de simulação
         while (count < 100000) {
@@ -451,8 +533,6 @@ public class Simulador {
 
             }
 
-            // 1 VEZ LOOP
-            // break;
         }
 
         // PRINT FILAS
