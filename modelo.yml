@@ -4,7 +4,7 @@ arrivals:
 queues: 
    Q1: 
       servers: 1
-      capacity: 3
+      capacity: 5
       minArrival: 2.0
       maxArrival: 4.0
       minService: 1.0
@@ -37,8 +37,4 @@ network:
    target: Q3
    probability: 0.7
 
-
-rndnumbersPerSeed: 100000
-
-seeds: 
-- 1
+rndnumbers: 100000

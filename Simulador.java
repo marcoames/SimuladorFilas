@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.security.auth.login.Configuration.Parameters;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Target;
+
 import org.yaml.snakeyaml.Yaml;
 
 public class Simulador {
@@ -25,6 +25,7 @@ public class Simulador {
     // Para usar numeros pseudoaleatorios predefinidos
     // private static double[] nums = {0.8, 0.2, 0.1, 0.9, 0.3, 0.4, 0.7};
 
+    // @SuppressWarnings("unchecked")
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws FileNotFoundException, IOException {
 
@@ -47,6 +48,9 @@ public class Simulador {
         //////// LISTA DE FILAS ////////
         //// YML ////
 
+        // 100000 POR PADRAO
+        int rndnumbers = 100000;
+
         Map<String, Double> arrivals = new HashMap<>();
         ArrayList<Fila> filas = new ArrayList<>();
         ArrayList<Connection> network = new ArrayList<>();
@@ -66,8 +70,7 @@ public class Simulador {
             // Populate arrivals map directly from arrivalsData
             arrivals.putAll(arrivalsData);
 
-            // Convert queuesMap and networkList into Fila and Connection objects
-            // respectively
+            // Convert queuesMap into Fila and add to filas
             for (Map.Entry<String, Map<String, Object>> entry : queuesMap.entrySet()) {
                 String queueName = entry.getKey();
                 Map<String, Object> queueData = entry.getValue();
@@ -89,6 +92,7 @@ public class Simulador {
                 filas.add(fila);
             }
 
+            // Converts networkList into Connection and add to network
             for (Map<String, Object> connectionData : networkList) {
                 Connection connection = new Connection(
                         (String) connectionData.get("source"),
@@ -96,6 +100,9 @@ public class Simulador {
                         (double) connectionData.get("probability"));
                 network.add(connection);
             }
+
+            // Get rndnumbers
+            rndnumbers = (int) yamlData.get("rndnumbers");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,7 +126,7 @@ public class Simulador {
 
         // SimulacaoUnicaFila(fila);
         // SimulacaoFilasEmTandem(fila1, fila2);
-        SimulacaoListaFilas(filas, network, arrivals);
+        SimulacaoListaFilas(filas, network, arrivals, rndnumbers);
 
     }
 
@@ -375,8 +382,15 @@ public class Simulador {
             ArrayList<Fila> filas) {
         // acumulaTempo
         for (Fila fila : filas) {
-            if (fila.status() >= 0) {
-                fila.getTimes()[fila.status()] += evento.getTime() - TG;
+            // System.out.println(
+            // "FILA: " + fila.getName() + " Times: " + fila.getTimes() + " Status: " +
+            // fila.status());
+            int status = fila.status();
+            if (status < 0) {
+                status = 0;
+            }
+            if (status <= fila.getTimes().length) {
+                fila.getTimes()[status] += evento.getTime() - TG;
             }
         }
 
@@ -385,22 +399,21 @@ public class Simulador {
         if (filaSource.status() < filaSource.getCapacity()) {
             filaSource.in();
             if (filaSource.status() <= filaSource.getServers()) {
-                // if rnd PASSAGEM
 
+                // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
+                // filaTarget.getName());
                 escalonador.alocaEvento(new Evento(2, TG
                         + (filaSource.getMinService()
                                 + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
                         filaSource));
                 count++;
-
-                // else SAIDA
-
             }
         } else {
             filaSource.loss();
         }
 
         // ALOCA CHEGADA NA FILA
+        // System.out.println("AGENDA CHEGADA EM: " + filaSource.getName());
         escalonador.alocaEvento(new Evento(0,
                 TG + (filaSource.getMinArrival()
                         + (filaSource.getMaxArrival() - filaSource.getMinArrival()) * Next_random()),
@@ -414,18 +427,24 @@ public class Simulador {
 
         // acumulaTempo
         for (Fila fila : filas) {
-            if (fila.status() >= 0) {
-                fila.getTimes()[fila.status()] += evento.getTime() - TG;
+            int status = fila.status();
+            if (status < 0) {
+                status = 0;
+            }
+            if (status <= fila.getTimes().length) {
+                fila.getTimes()[status] += evento.getTime() - TG;
             }
         }
 
         TG = evento.getTime();
 
-        filaTarget.out();
-        if (filaTarget.status() >= filaTarget.getServers()) {
+        // System.out.println("FILA " + filaSource.getName() + " OUT");
+        filaSource.out();
+        if (filaSource.status() >= filaSource.getServers()) {
+            // System.out.println("AGENDA SAIDA DE: " + filaSource.getName());
             escalonador.alocaEvento(new Evento(1,
-                    TG + (filaTarget.getMinService()
-                            + (filaTarget.getMaxService() - filaTarget.getMinService()) * Next_random()),
+                    TG + (filaSource.getMinService()
+                            + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
                     filaSource));
             count++;
         }
@@ -434,10 +453,18 @@ public class Simulador {
 
     private static void PassagemLista(Evento evento, Escalonador escalonador, Fila filaSource, Fila filaTarget,
             ArrayList<Fila> filas) {
+
         // acumulaTempo
         for (Fila fila : filas) {
-            if (fila.status() >= 0) {
-                fila.getTimes()[fila.status()] += evento.getTime() - TG;
+            // System.out.println(
+            // "FILA: " + fila.getName() + " Times: " + fila.getTimes().toString() + "
+            // Status: " + fila.status());
+            int status = fila.status();
+            if (status < 0) {
+                status = 0;
+            }
+            if (status <= fila.getTimes().length) {
+                fila.getTimes()[status] += evento.getTime() - TG;
             }
         }
 
@@ -445,93 +472,97 @@ public class Simulador {
 
         filaSource.out();
         if (filaSource.status() >= filaSource.getServers()) {
-
             escalonador.alocaEvento(new Evento(2,
                     TG + (filaSource.getMinService()
                             + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
                     filaSource));
-
+            count++;
         }
-
         if (filaTarget.status() < filaTarget.getCapacity()) {
             filaTarget.in();
             if (filaTarget.status() <= filaTarget.getServers()) {
-                escalonador.alocaEvento(new Evento(1, TG
+                // System.out.println("agenda passagem de: " + filaSource.getName() + " para " +
+                // filaTarget.getName());
+                escalonador.alocaEvento(new Evento(2, TG
                         + (filaTarget.getMinService()
                                 + (filaTarget.getMaxService() - filaTarget.getMinService()) * Next_random()),
-                        filaSource));
+                        filaTarget));
+                count++;
             }
-        }
-
-        else {
+        } else {
             filaTarget.loss();
         }
     }
 
     public static void SimulacaoListaFilas(ArrayList<Fila> filas, ArrayList<Connection> network,
-            Map<String, Double> arrivals) {
+            Map<String, Double> arrivals, int rndnumbers) {
         Escalonador escalonador = new Escalonador();
 
-        // Primeiro evento de chegada
+        // Evento de chegada
         for (Map.Entry<String, Double> entry : arrivals.entrySet()) {
             String queueName = entry.getKey();
             Double arrivalRate = entry.getValue();
 
             Fila filaEvento = getFilaByName(queueName, filas);
-
-            Evento evento1 = new Evento(0, arrivalRate, filaEvento);
+            Evento evento = new Evento(0, arrivalRate, filaEvento);
             // System.out.println(evento1.toString());
-            escalonador.alocaEvento(evento1);
-            // Break the loop after creating the first Evento object
-            // break;
+            escalonador.alocaEvento(evento);
 
         }
 
-        // Loop de simulação
-        while (count < 100000) {
+        // LOOP DA SIMULACAO
+        while (count < rndnumbers) {
+
             Evento nextEvent = escalonador.proxEvento();
 
             if (nextEvent.getType() == Evento.CHEGADA) {
-                // System.out.println("CHEGADA");
+                // System.out.println("\n" + count + ": EVENTO CHEGADA DE " +
+                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
+                Fila filaTarget = filas.get(filaTargetIndex);
 
-                if (filaTargetIndex != -1 && filaTargetIndex < filas.size()) {
-                    Fila filaTarget = filas.get(filaTargetIndex);
-                    ChegadaLista(nextEvent, escalonador, filaSource, filaTarget, filas);
-                } else {
-                    System.out.println("No valid target found. CHEGADA.");
-                }
+                ChegadaLista(nextEvent, escalonador, filaSource, filaTarget, filas);
 
             } else if (nextEvent.getType() == Evento.SAIDA) {
-                // System.out.println("SAIDA");
+                // System.out.println("\n" + count + ": EVENTO SAIDA DE " +
+                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
 
-                if (filaTargetIndex != -1 && filaTargetIndex < filas.size()) {
-                    Fila filaTarget = filas.get(filaTargetIndex);
-                    SaidaLista(nextEvent, escalonador, filaSource, filaTarget, filas);
+                // SE NAO ACHOU UMA FILA TARGET SAI DA SIMULACAO
+                if (filaTargetIndex == -1) {
+                    // System.out.println("SAIDA DA SIMULACAO DE " + nextEvent.getFila().getName());
+                    SaidaLista(nextEvent, escalonador, filaSource, filaSource, filas);
                 } else {
-                    // SaidaLista(evento1, escalonador, filaSource, filaSource, filas);
-                    System.out.println("No valid target found. SAIDA.");
+                    Fila filaTarget = filas.get(filaTargetIndex);
+                    // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
+                    // filaTarget.getName());
+                    PassagemLista(nextEvent, escalonador, filaSource, filaTarget, filas);
                 }
 
             } else if (nextEvent.getType() == Evento.PASSAGEM) {
-                // System.out.println("PASSAGEM");
+                // System.out.println("\n" + count + ": EVENTO PASSAGEM DE " +
+                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
 
-                if (filaTargetIndex != -1 && filaTargetIndex < filas.size()) {
-                    Fila filaTarget = filas.get(filaTargetIndex);
-                    PassagemLista(nextEvent, escalonador, filaSource, filaTarget, filas);
+                // SE NAO ACHOU UMA FILA TARGET SAI DA SIMULACAO
+                if (filaTargetIndex == -1) {
+                    // System.out.println("AGENDA SAIDA DE " + nextEvent.getFila().getName());
+                    SaidaLista(nextEvent, escalonador, filaSource, filaSource, filas);
                 } else {
-                    System.out.println("No valid target found. PASSAGEM");
+                    Fila filaTarget = filas.get(filaTargetIndex);
+                    // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
+                    // filaTarget.getName());
+                    PassagemLista(nextEvent, escalonador, filaSource, filaTarget, filas);
                 }
-
             }
+
+            // break;
 
         }
 
@@ -568,26 +599,28 @@ public class Simulador {
     public static int selectTarget(ArrayList<Fila> filas, Fila filaSource, ArrayList<Connection> network) {
         int filaTargetIndex = -1;
 
+        // System.out.println("\nSELECIONANDO FILA TARGET DA: " + filaSource.getName());
+
         // Filter connections to only include those originating from filaSource
         List<Connection> connections = network.stream()
                 .filter(connection -> connection.getSource().equals(filaSource.getName()))
-                .sorted(Comparator.comparingDouble(Connection::getProbability)) // Sort by connection probability
+                .sorted(Comparator.comparingDouble(Connection::getProbability))
                 .collect(Collectors.toList());
 
         double rand = Math.random();
         double cumulativeProbability = 0.0;
 
         for (Connection connection : connections) {
-            cumulativeProbability += connection.getProbability();
 
+            cumulativeProbability += connection.getProbability();
             // System.out.println(connection.toString());
 
             // System.out.println("Rand: " + rand);
-            // System.out.println("Prob: " + cumulativeProbability);
+            // System.out.println("cumProb: " + cumulativeProbability);
 
-            if (cumulativeProbability > 1.0) {
-                break; // Exit loop if cumulative probability exceeds 1.0
-            }
+            // if (cumulativeProbability > 1.0) {
+            // break; // Exit loop if cumulative probability exceeds 1.0
+            // }
 
             if (rand < cumulativeProbability) {
                 filaTargetIndex = getIndexByName(connection.getTarget(), filas);
@@ -595,11 +628,21 @@ public class Simulador {
             }
         }
 
+        // If no valid target is found and the sum of probabilities is less than 1,
+        // assign the remaining probability to the -1 index (no valid target)
+        if (filaTargetIndex == -1 && cumulativeProbability < 1.0) {
+            double remainingProbability = 1.0 - cumulativeProbability;
+            if (rand < remainingProbability) {
+                filaTargetIndex = -1;
+            }
+        }
+
+        // System.out.println("Rand: " + rand);
         // if (filaTargetIndex != -1) {
         // System.out.println("Target Selected: " +
         // filas.get(filaTargetIndex).getName());
         // } else {
-        // System.out.println("No valid target found.");
+        // System.out.println("No valid target found. " + filaTargetIndex);
         // }
 
         return filaTargetIndex; // Return -1 if no valid target is found

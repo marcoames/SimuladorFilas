@@ -8,7 +8,7 @@ public class Escalonador {
     }
 
     public void alocaEvento(Evento evento) {
-        // System.out.println("Alocado Evento: " + event.toString());
+        // System.out.println("Alocado Evento: " + evento.toString());
         filaEventos.offer(evento);
     }
 
