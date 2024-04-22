@@ -9,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Target;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -382,9 +381,6 @@ public class Simulador {
             ArrayList<Fila> filas) {
         // acumulaTempo
         for (Fila fila : filas) {
-            // System.out.println(
-            // "FILA: " + fila.getName() + " Times: " + fila.getTimes() + " Status: " +
-            // fila.status());
             int status = fila.status();
             if (status < 0) {
                 status = 0;
@@ -400,8 +396,6 @@ public class Simulador {
             filaSource.in();
             if (filaSource.status() <= filaSource.getServers()) {
 
-                // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
-                // filaTarget.getName());
                 escalonador.alocaEvento(new Evento(2, TG
                         + (filaSource.getMinService()
                                 + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
@@ -413,7 +407,6 @@ public class Simulador {
         }
 
         // ALOCA CHEGADA NA FILA
-        // System.out.println("AGENDA CHEGADA EM: " + filaSource.getName());
         escalonador.alocaEvento(new Evento(0,
                 TG + (filaSource.getMinArrival()
                         + (filaSource.getMaxArrival() - filaSource.getMinArrival()) * Next_random()),
@@ -438,10 +431,9 @@ public class Simulador {
 
         TG = evento.getTime();
 
-        // System.out.println("FILA " + filaSource.getName() + " OUT");
         filaSource.out();
         if (filaSource.status() >= filaSource.getServers()) {
-            // System.out.println("AGENDA SAIDA DE: " + filaSource.getName());
+
             escalonador.alocaEvento(new Evento(1,
                     TG + (filaSource.getMinService()
                             + (filaSource.getMaxService() - filaSource.getMinService()) * Next_random()),
@@ -456,9 +448,6 @@ public class Simulador {
 
         // acumulaTempo
         for (Fila fila : filas) {
-            // System.out.println(
-            // "FILA: " + fila.getName() + " Times: " + fila.getTimes().toString() + "
-            // Status: " + fila.status());
             int status = fila.status();
             if (status < 0) {
                 status = 0;
@@ -481,8 +470,6 @@ public class Simulador {
         if (filaTarget.status() < filaTarget.getCapacity()) {
             filaTarget.in();
             if (filaTarget.status() <= filaTarget.getServers()) {
-                // System.out.println("agenda passagem de: " + filaSource.getName() + " para " +
-                // filaTarget.getName());
                 escalonador.alocaEvento(new Evento(2, TG
                         + (filaTarget.getMinService()
                                 + (filaTarget.getMaxService() - filaTarget.getMinService()) * Next_random()),
@@ -505,7 +492,6 @@ public class Simulador {
 
             Fila filaEvento = getFilaByName(queueName, filas);
             Evento evento = new Evento(0, arrivalRate, filaEvento);
-            // System.out.println(evento1.toString());
             escalonador.alocaEvento(evento);
 
         }
@@ -516,53 +502,38 @@ public class Simulador {
             Evento nextEvent = escalonador.proxEvento();
 
             if (nextEvent.getType() == Evento.CHEGADA) {
-                // System.out.println("\n" + count + ": EVENTO CHEGADA DE " +
-                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
                 Fila filaTarget = filas.get(filaTargetIndex);
-
                 ChegadaLista(nextEvent, escalonador, filaSource, filaTarget, filas);
 
             } else if (nextEvent.getType() == Evento.SAIDA) {
-                // System.out.println("\n" + count + ": EVENTO SAIDA DE " +
-                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
 
                 // SE NAO ACHOU UMA FILA TARGET SAI DA SIMULACAO
                 if (filaTargetIndex == -1) {
-                    // System.out.println("SAIDA DA SIMULACAO DE " + nextEvent.getFila().getName());
                     SaidaLista(nextEvent, escalonador, filaSource, filaSource, filas);
                 } else {
                     Fila filaTarget = filas.get(filaTargetIndex);
-                    // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
-                    // filaTarget.getName());
                     PassagemLista(nextEvent, escalonador, filaSource, filaTarget, filas);
                 }
 
             } else if (nextEvent.getType() == Evento.PASSAGEM) {
-                // System.out.println("\n" + count + ": EVENTO PASSAGEM DE " +
-                // nextEvent.getFila().getName());
 
                 Fila filaSource = nextEvent.getFila();
                 int filaTargetIndex = selectTarget(filas, filaSource, network);
 
                 // SE NAO ACHOU UMA FILA TARGET SAI DA SIMULACAO
                 if (filaTargetIndex == -1) {
-                    // System.out.println("AGENDA SAIDA DE " + nextEvent.getFila().getName());
                     SaidaLista(nextEvent, escalonador, filaSource, filaSource, filas);
                 } else {
                     Fila filaTarget = filas.get(filaTargetIndex);
-                    // System.out.println("AGENDA PASSAGEM DE: " + filaSource.getName() + " PARA " +
-                    // filaTarget.getName());
                     PassagemLista(nextEvent, escalonador, filaSource, filaTarget, filas);
                 }
             }
-
-            // break;
 
         }
 
@@ -599,9 +570,7 @@ public class Simulador {
     public static int selectTarget(ArrayList<Fila> filas, Fila filaSource, ArrayList<Connection> network) {
         int filaTargetIndex = -1;
 
-        // System.out.println("\nSELECIONANDO FILA TARGET DA: " + filaSource.getName());
-
-        // Filter connections to only include those originating from filaSource
+        // ordena conexoes da source pela probabiliadade, menores antes
         List<Connection> connections = network.stream()
                 .filter(connection -> connection.getSource().equals(filaSource.getName()))
                 .sorted(Comparator.comparingDouble(Connection::getProbability))
@@ -613,14 +582,6 @@ public class Simulador {
         for (Connection connection : connections) {
 
             cumulativeProbability += connection.getProbability();
-            // System.out.println(connection.toString());
-
-            // System.out.println("Rand: " + rand);
-            // System.out.println("cumProb: " + cumulativeProbability);
-
-            // if (cumulativeProbability > 1.0) {
-            // break; // Exit loop if cumulative probability exceeds 1.0
-            // }
 
             if (rand < cumulativeProbability) {
                 filaTargetIndex = getIndexByName(connection.getTarget(), filas);
@@ -636,14 +597,6 @@ public class Simulador {
                 filaTargetIndex = -1;
             }
         }
-
-        // System.out.println("Rand: " + rand);
-        // if (filaTargetIndex != -1) {
-        // System.out.println("Target Selected: " +
-        // filas.get(filaTargetIndex).getName());
-        // } else {
-        // System.out.println("No valid target found. " + filaTargetIndex);
-        // }
 
         return filaTargetIndex; // Return -1 if no valid target is found
     }
